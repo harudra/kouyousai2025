@@ -25,7 +25,7 @@ class Visitor(BaseModel):
     email: str
 
 
-@app.post("/visitors")
+@app.post("/visitor")
 async def create_visitor(visitor: Visitor):
     try:
         doc_ref = firestore_client.collection(
@@ -43,7 +43,7 @@ async def create_visitor(visitor: Visitor):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/visitors/{visitor_id}")
+@app.get("/visitor/{visitor_id}")
 async def read_visitor(visitor_id: str):
     try:
         doc = firestore_client.collection(

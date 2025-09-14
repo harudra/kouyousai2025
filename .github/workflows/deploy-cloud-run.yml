@@ -8,10 +8,10 @@ on:
 env:
   PROJECT_ID: koyofes2025
   SERVICE_NAME: koyofes-check-in-service        # Cloud Run サービス名
-  IMAGE_NAME: check-in-service                     # Docker イメージ名（任意で決める）
+  IMAGE_NAME: check-in-service                  # Docker イメージ名（任意で決める）
   REGION: asia-northeast2
-  REPOSITORY: cloud-run-source-deploy             # Artifact Registry のリポジトリ名
-  FIRESTORE_COLLECTION: visitors
+  REPOSITORY: cloud-run-source-deploy           # Artifact Registry のリポジトリ名
+  FIRESTORE_COLLECTION: visitor
   TAG: latest
 
 jobs:
