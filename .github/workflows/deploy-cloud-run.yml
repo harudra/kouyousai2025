@@ -6,39 +6,40 @@ on:
       - master
 
 env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
-  IMAGE: ${{ secrets.GCP_IMAGE }}
-  REGION: ${{ secrets.GCP_REGION }}
+  PROJECT_ID: koyofes2025
+  SERVICE_NAME: ${{ secrets.SERVICE_NAME }}        # Cloud Run サービス名
+  IMAGE_NAME: check-in-service                     # Docker イメージ名（任意で決める）
+  REGION: asia-northeast2
+  REPOSITORY: cloud-run-source-deploy             # Artifact Registry のリポジトリ名
   TAG: latest
 
 jobs:
   setup-build-publish-deploy:
-    name: Setup, Build, Publish, and Deploy.
+    name: Setup, Build, Publish, and Deploy
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - id: "auth"
-        uses: "google-github-actions/auth@v0"
+      - id: auth
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: "${{ secrets.GCLOUD_AUTH }}"
 
       - name: Setup Google Cloud
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
         with:
-          service_account_key: ${{ secrets.GCLOUD_AUTH }}
-          project_id: ${{ secrets.PROJECT_ID }}
+          project_id: ${{ env.PROJECT_ID }}
 
       - name: Configure Docker
-        run: gcloud auth configure-docker asia-northeast1-docker.pkg.dev
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Set FULL_TAG
+        run: |
+          echo "FULL_TAG=${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}:${TAG}" >> $GITHUB_ENV
 
       - name: Build
-        env:
-          # Compose full image tag to avoid invalid reference formats and make it easier to debug
-          FULL_TAG: "asia-northeast1-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
         run: |
           echo "Building image: $FULL_TAG"
           docker build --platform linux/amd64 -f Dockerfile.prod -t "$FULL_TAG" .
@@ -51,4 +52,8 @@ jobs:
       - name: Deploy
         run: |
           echo "Deploying service: $SERVICE_NAME with image $FULL_TAG"
-          gcloud run deploy "$SERVICE_NAME" --image "$FULL_TAG" --platform managed --region "$REGION" --allow-unauthenticated
+          gcloud run deploy "$SERVICE_NAME" \
+            --image "$FULL_TAG" \
+            --platform managed \
+            --region "$REGION" \
+            --allow-unauthenticated
