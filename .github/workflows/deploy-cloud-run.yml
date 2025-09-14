@@ -42,7 +42,7 @@ jobs:
       - name: Build
         run: |
           echo "Building image: $FULL_TAG"
-          docker build --platform linux/amd64 -f Dockerfile.prod -t "$FULL_TAG" .
+          docker build --platform linux/amd64 -f backend/Dockerfile -t "$FULL_TAG" backend/
 
       - name: Push
         run: |
