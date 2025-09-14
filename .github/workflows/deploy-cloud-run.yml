@@ -7,10 +7,11 @@ on:
 
 env:
   PROJECT_ID: koyofes2025
-  SERVICE_NAME: ${{ secrets.SERVICE_NAME }}        # Cloud Run サービス名
+  SERVICE_NAME: koyofes-check-in-service        # Cloud Run サービス名
   IMAGE_NAME: check-in-service                     # Docker イメージ名（任意で決める）
   REGION: asia-northeast2
   REPOSITORY: cloud-run-source-deploy             # Artifact Registry のリポジトリ名
+  FIRESTORE_COLLECTION: visitors
   TAG: latest
 
 jobs:
@@ -56,4 +57,5 @@ jobs:
             --image "$FULL_TAG" \
             --platform managed \
             --region "$REGION" \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --set-env-vars FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_COLLECTION=${FIRESTORE_COLLECTION}
