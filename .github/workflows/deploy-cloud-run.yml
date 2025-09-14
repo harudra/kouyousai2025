@@ -36,10 +36,19 @@ jobs:
         run: gcloud auth configure-docker asia-northeast1-docker.pkg.dev
 
       - name: Build
-        run: docker build --platform linux/amd64 -f Dockerfile.prod -t asia-northeast1-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/$IMAGE:$TAG .
+        env:
+          # Compose full image tag to avoid invalid reference formats and make it easier to debug
+          FULL_TAG: "asia-northeast1-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
+        run: |
+          echo "Building image: $FULL_TAG"
+          docker build --platform linux/amd64 -f Dockerfile.prod -t "$FULL_TAG" .
 
       - name: Push
-        run: docker push asia-northeast1-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/$IMAGE:$TAG
+        run: |
+          echo "Pushing image: $FULL_TAG"
+          docker push "$FULL_TAG"
 
       - name: Deploy
-        run: gcloud run deploy $SERVICE_NAME --image asia-northeast1-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/$IMAGE:$TAG --platform managed --region $REGION --allow-unauthenticated
+        run: |
+          echo "Deploying service: $SERVICE_NAME with image $FULL_TAG"
+          gcloud run deploy "$SERVICE_NAME" --image "$FULL_TAG" --platform managed --region "$REGION" --allow-unauthenticated
