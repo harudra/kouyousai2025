@@ -1,10 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from typing import Literal
 from google.cloud import firestore
 import os
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
@@ -20,41 +21,86 @@ firestore_client = firestore.Client(project=FIRESTORE_PROJECT_ID)
 logger.debug("Firestoreクライアントがグローバルに初期化されました。")
 
 
-class Visitor(BaseModel):
-    name: str
-    email: str
+class VisitorByID(BaseModel):
+    visitor_id: str
 
 
-@app.post("/visitor")
-async def create_visitor(visitor: Visitor):
+class VisitPayload(BaseModel):
+    visitor_id: str
+    day: Literal["first", "second"]
+    visited: bool
+
+
+def _serialize_doc(d: dict) -> dict:
+    if d is None:
+        return {}
+    out = {}
+    for k, v in d.items():
+        if hasattr(v, "isoformat"):
+            try:
+                out[k] = v.isoformat()
+                continue
+            except Exception:
+                pass
+        out[k] = v
+    return out
+
+
+@app.post("/upsert_visited")
+async def upsert_visited(payload: VisitPayload):
+    """Unified endpoint. Payload: {visitor_id, day: 'first'|'second', visited: bool}"""
     try:
+        # day に応じてフィールド名を選択
+        if payload.day == "first":
+            flag_field = "visited_first_day"
+            timestamp_field = "visited_first_day_updated_at"
+        elif payload.day == "second":
+            flag_field = "visited_second_day"
+            timestamp_field = "visited_second_day_updated_at"
+        else:
+            raise HTTPException(
+                status_code=400, detail="day は 'first' または 'second' を指定してください")
+
         doc_ref = firestore_client.collection(
-            FIRESTORE_COLLECTION_NAME).document()
-        visitor_data = visitor.model_dump()
+            FIRESTORE_COLLECTION_NAME).document(payload.visitor_id)
 
-        visitor_data["created_at"] = firestore.SERVER_TIMESTAMP
-
-        doc_ref.set(visitor_data)
-        logger.info("アイテム %s (ID=%s) を作成しました。", visitor_data, doc_ref.id)
-
-        return {"id": doc_ref.id, **visitor_data}
-    except Exception as e:
-        logger.exception("アイテムの作成に失敗しました: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/visitor/{visitor_id}")
-async def read_visitor(visitor_id: str):
-    try:
-        doc = firestore_client.collection(
-            FIRESTORE_COLLECTION_NAME).document(visitor_id).get()
-        if not doc.exists:
+        # 存在確認
+        if not doc_ref.get().exists:
             raise HTTPException(status_code=404, detail="アイテムが見つかりません")
-        return doc.to_dict()
+
+        # 更新
+        data = {flag_field: payload.visited,
+                timestamp_field: firestore.SERVER_TIMESTAMP}
+        doc_ref.update(data)
+
+        # 保存後のデータを取得
+        saved = doc_ref.get()
+        saved_data = saved.to_dict() if saved.exists else {}
+
+        # dict化して返す
+        resp = {"id": doc_ref.id}
+        resp.update(_serialize_doc(saved_data or {}))
+        return resp
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("アイテム %s の読み取りに失敗しました: %s", visitor_id, e)
+        logger.exception("visited の upsert に失敗しました: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/read_visitor")
+async def read_visitor(payload: VisitorByID):
+    try:
+        doc = firestore_client.collection(FIRESTORE_COLLECTION_NAME).document(
+            payload.visitor_id).get()
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="アイテムが見つかりません")
+        return _serialize_doc(doc.to_dict() or {})
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("アイテム %s の読み取りに失敗しました: %s", payload.visitor_id, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

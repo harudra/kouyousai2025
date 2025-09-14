@@ -17,6 +17,3 @@ build/
 # Secrets
 *.pem
 *.key
-
-# Postman
-postman_collection.json
