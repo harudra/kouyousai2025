@@ -10,6 +10,7 @@ services:
     environment:
       - FIRESTORE_EMULATOR_HOST=host.docker.internal:8923
       - FIRESTORE_PROJECT_ID=demo-project
+      - FIRESTORE_COLLECTION=items
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
