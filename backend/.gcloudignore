@@ -1,0 +1,19 @@
+# Python artifacts
+__pycache__/
+*.pyc
+
+# Virtualenv
+venv/
+.env
+
+# Build artifacts
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# Secrets
+*.pem
+*.key
