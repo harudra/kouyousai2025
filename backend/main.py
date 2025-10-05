@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Literal
 from google.cloud import firestore
@@ -9,6 +10,14 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],          # 許可するオリジン
+    allow_credentials=True,
+    allow_methods=["*"],            # GET, POSTなど全許可
+    allow_headers=["*"],            # 全ヘッダー許可
+)
 
 FIRESTORE_PROJECT_ID = os.environ.get("FIRESTORE_PROJECT_ID", "demo-project")
 logger.info("Firestore Project ID: %s", FIRESTORE_PROJECT_ID)
