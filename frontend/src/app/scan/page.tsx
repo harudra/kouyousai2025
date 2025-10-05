@@ -27,7 +27,7 @@ export default function Page() {
         width: { ideal: 1280 },
         height: { ideal: 720 },
         frameRate: { max: 30 },
-        facingMode: { ideal: "environment" }, // exactをidealに変更
+        facingMode: { exact: "environment" }, // exactをidealに変更
       },
     };
 
@@ -86,6 +86,12 @@ export default function Page() {
     const handleVisitorRegister = async () => {
       try {
         const visitorData = await readVisitor({ visitor_id: result });
+
+        // カメラ停止
+        if (videoRef.current && videoRef.current.srcObject) {
+          const stream = videoRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach((track) => track.stop());
+        }
 
         if ("detail" in visitorData) {
           // 登録されていない
