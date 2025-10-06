@@ -121,12 +121,12 @@ export default function Page() {
     <Flex
       direction="column"
       align="center"
-      justify="flex-start"
+      justify="center"
       minH="100vh"
       bg="gray.50"
       gap={6}
     >
-      <Text mt={4} fontSize="xl" fontWeight="bold">
+      <Text m={4} fontSize="xl" fontWeight="bold">
         {message}
       </Text>
 
@@ -134,8 +134,8 @@ export default function Page() {
         border="2px dashed"
         borderColor="#ECA517FF"
         borderRadius="md"
-        w="70vw"
-        h="80vh"
+        w="60vw"
+        h="50vh"
         position="relative"
         overflow="hidden"
       >
