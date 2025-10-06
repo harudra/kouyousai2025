@@ -87,12 +87,6 @@ export default function Page() {
       try {
         const visitorData = await readVisitor({ visitor_id: result });
 
-        // カメラ停止
-        if (videoRef.current && videoRef.current.srcObject) {
-          const stream = videoRef.current.srcObject as MediaStream;
-          stream.getTracks().forEach((track) => track.stop());
-        }
-
         if ("detail" in visitorData) {
           // 登録されていない
           setMessage("登録されていないQRコードです");
@@ -107,6 +101,11 @@ export default function Page() {
             day: day,
             visited: true,
           });
+          // カメラ停止
+          if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach((track) => track.stop());
+          }
           setCompleted(true);
         }
       } catch (error) {
@@ -134,7 +133,7 @@ export default function Page() {
         border="2px dashed"
         borderColor="#ECA517FF"
         borderRadius="md"
-        w="60vw"
+        w="80vw"
         h="50vh"
         position="relative"
         overflow="hidden"
